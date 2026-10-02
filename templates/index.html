@@ -1,0 +1,97 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>URL Shield | Fake URL Detection</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <header class="header">
+            <div class="logo">🛡️</div>
+            <h1>URL Shield</h1>
+            <p>AI-Powered Fake URL Detection System</p>
+        </header>
+
+        <main class="main-card">
+
+            <div class="section-title">
+                <h2>Check Website Safety</h2>
+                <p>Enter a URL below to analyze its security characteristics.</p>
+            </div>
+
+            <form id="urlForm">
+
+                <label for="urlInput">Website URL</label>
+
+                <div class="input-group">
+                    <input
+                        type="text"
+                        id="urlInput"
+                        placeholder="https://example.com"
+                        autocomplete="url"
+                        required
+                    >
+                </div>
+
+                <button type="submit" id="analyzeBtn">
+                    🔍 Analyze URL
+                </button>
+
+            </form>
+
+            <div id="loading" class="loading hidden">
+                <div class="spinner"></div>
+                <p>Analyzing URL, please wait...</p>
+            </div>
+
+            <div id="result" class="result hidden">
+
+                <div id="resultIcon" class="result-icon"></div>
+
+                <h2 id="resultTitle"></h2>
+
+                <p id="resultMessage"></p>
+
+                <div class="confidence-box">
+                    <div class="confidence-header">
+                        <span>Model Confidence</span>
+                        <strong id="confidenceValue">0%</strong>
+                    </div>
+
+                    <div class="progress-bar">
+                        <div id="confidenceBar"
+                             class="progress-fill"></div>
+                    </div>
+                </div>
+
+                <p class="disclaimer">
+                    This prediction is based on machine learning
+                    analysis and is not a guarantee of website safety.
+                </p>
+
+            </div>
+
+            <div id="error" class="error hidden"></div>
+
+        </main>
+
+        <footer class="footer">
+            <p>Developed for Cybersecurity Education</p>
+            <p>Machine Learning Based Phishing Detection</p>
+        </footer>
+
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+
+</body>
+</html>
