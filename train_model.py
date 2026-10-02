@@ -1,15 +1,11 @@
 
 import os
-import joblib
 import pandas as pd
+import joblib
 
-from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import (
-    accuracy_score,
-    classification_report,
-    confusion_matrix
-)
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
 
 from feature_extraction import extract_features
 
@@ -17,76 +13,29 @@ from feature_extraction import extract_features
 # Dataset path
 DATASET_PATH = "dataset/urls.csv"
 
-# Model output path
-MODEL_DIR = "model"
-MODEL_PATH = os.path.join(MODEL_DIR, "phishing_model.pkl")
-
-
-def load_dataset():
-
-    if not os.path.exists(DATASET_PATH):
-        raise FileNotFoundError(
-            "Dataset not found. Please add dataset/urls.csv"
-        )
-
-    df = pd.read_csv(DATASET_PATH)
-
-    if not {"url", "label"}.issubset(df.columns):
-        raise ValueError(
-            "Dataset must contain 'url' and 'label' columns."
-        )
-
-    df = df.dropna(subset=["url", "label"])
-    df["url"] = df["url"].astype(str)
-
-    # Convert labels to binary values
-    label_map = {
-        "legitimate": 0,
-        "benign": 0,
-        "safe": 0,
-        "0": 0,
-        "phishing": 1,
-        "malicious": 1,
-        "fake": 1,
-        "1": 1
-    }
-
-    df["label"] = (
-        df["label"]
-        .astype(str)
-        .str.strip()
-        .str.lower()
-        .map(label_map)
-    )
-
-    df = df.dropna(subset=["label"])
-    df["label"] = df["label"].astype(int)
-
-    if df["label"].nunique() != 2:
-        raise ValueError(
-            "Dataset must contain both legitimate and phishing URLs."
-        )
-
-    return df
+# Model save path
+MODEL_PATH = "model/phishing_model.pkl"
 
 
 def train_model():
 
     print("Loading dataset...")
 
-    df = load_dataset()
+    df = pd.read_csv(DATASET_PATH)
 
-    print("Extracting URL features...")
+    df = df.dropna(subset=["url", "label"])
+    df = df.drop_duplicates(subset=["url"])
 
-    feature_rows = []
+    print("Total URLs:", len(df))
 
-    for url in df["url"]:
-        feature_rows.append(extract_features(url))
+    # Extract features
+    print("Extracting features...")
 
-    X = pd.DataFrame(feature_rows)
-    y = df["label"]
+    X = df["url"].apply(extract_features)
 
-    print("Dataset size:", len(X))
+    X = pd.DataFrame(X.tolist())
+
+    y = df["label"].astype(int)
 
     # Split dataset
     X_train, X_test, y_train, y_test = train_test_split(
@@ -97,13 +46,13 @@ def train_model():
         stratify=y
     )
 
+    # Train model
     print("Training Random Forest model...")
 
     model = RandomForestClassifier(
         n_estimators=200,
-        random_state=42,
         class_weight="balanced",
-        n_jobs=-1
+        random_state=42
     )
 
     model.fit(X_train, y_train)
@@ -111,38 +60,22 @@ def train_model():
     # Evaluate model
     predictions = model.predict(X_test)
 
-    accuracy = accuracy_score(y_test, predictions)
+    print("Accuracy:", accuracy_score(y_test, predictions))
 
-    print("\nModel Evaluation")
-    print("----------------------")
-    print("Accuracy:", round(accuracy * 100, 2), "%")
+    print(classification_report(y_test, predictions))
 
-    print("\nClassification Report:")
-    print(
-        classification_report(
-            y_test,
-            predictions,
-            target_names=["Legitimate", "Phishing"],
-            zero_division=0
-        )
-    )
+    # Create model folder automatically
+    os.makedirs("model", exist_ok=True)
 
-    print("\nConfusion Matrix:")
-    print(confusion_matrix(y_test, predictions))
+    # Save model and feature names
+    model_data = {
+        "model": model,
+        "feature_names": list(X.columns)
+    }
 
-    # Save trained model
-    os.makedirs(MODEL_DIR, exist_ok=True)
+    joblib.dump(model_data, MODEL_PATH)
 
-    joblib.dump(
-        {
-            "model": model,
-            "feature_names": list(X.columns)
-        },
-        MODEL_PATH
-    )
-
-    print("\nModel saved successfully!")
-    print("Location:", MODEL_PATH)
+    print("Model saved successfully:", MODEL_PATH)
 
 
 if __name__ == "__main__":
